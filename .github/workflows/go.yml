@@ -16,6 +16,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Change to c2-server directory
+        run: cd c2-server
+
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
