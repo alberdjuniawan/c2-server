@@ -38,7 +38,7 @@ A Command & Control (C2) backend server designed to manage remote agents securel
   - **File size restrictions**: Limits on the size of uploaded files to prevent overflow or excessive load.
   - **Allowed extensions validation**: Ensures that only certain file types are accepted.
 
-**`Security Features`**
+### **`Security Features`**
 
 **Routing & Access Control**
   - **Dual-server routing**: Public server (`:443`) for agents, internal server (`:8443`) for admin access.
