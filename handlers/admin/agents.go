@@ -7,12 +7,19 @@ import (
 	"net/http"
 )
 
-// GetAllAgentsHandler menangani permintaan untuk mengambil semua agent
+// GetAllAgentsHandler godoc
+// @Summary Retrieve all registered agents
+// @Description Returns a list of all agents currently registered in the system
+// @Tags admin
+// @Produce json
+// @Success 200 {array} database.Agent
+// @Failure 500 {object} database.ErrorResponse
+// @Router /admin/agents [get]
 func GetAllAgentsHandler(w http.ResponseWriter, r *http.Request) {
 	agents, err := database.GetAllAgents()
 	if err != nil {
-		log.Println("Gagal mengambil daftar agent:", err)
-		http.Error(w, "Gagal mengambil daftar agent", http.StatusInternalServerError)
+		log.Println("Failed to retrieve agent list:", err)
+		http.Error(w, "Failed to retrieve agent list", http.StatusInternalServerError)
 		return
 	}
 

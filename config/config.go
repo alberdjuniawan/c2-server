@@ -9,8 +9,11 @@ import (
 	"github.com/joho/godotenv"
 )
 
-var JWTSecret string
-var DBPath string
+var (
+	JWTSecret string
+	DBPath    string
+	Domain    string
+)
 
 func LoadEnv() error {
 	err := godotenv.Load()
@@ -25,6 +28,11 @@ func LoadEnv() error {
 	if JWTSecret == "" || DBPath == "" {
 		log.Fatal("Environment variables JWT_SECRET or DB_PATH are missing")
 		return fmt.Errorf("missing required environment variables")
+	}
+
+	Domain = os.Getenv("DOMAIN")
+	if Domain == "" {
+		log.Fatal("DOMAIN not set in environment")
 	}
 
 	return nil

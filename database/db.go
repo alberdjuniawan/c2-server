@@ -19,12 +19,10 @@ func Connect() *sql.DB {
 	return db
 }
 
-// Setup semua tabel
 func Setup() {
 	db := Connect()
 	defer db.Close()
 
-	// agents table
 	_, err := db.Exec(`CREATE TABLE IF NOT EXISTS agents (
 		id TEXT PRIMARY KEY,
 		ip TEXT NOT NULL,
@@ -41,7 +39,6 @@ func Setup() {
 		log.Fatal(err)
 	}
 
-	// users table
 	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS users (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		username TEXT NOT NULL UNIQUE,
@@ -52,7 +49,6 @@ func Setup() {
 		log.Fatal(err)
 	}
 
-	// logs table
 	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS logs (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		agent_id TEXT,
@@ -64,7 +60,6 @@ func Setup() {
 		log.Fatal(err)
 	}
 
-	// Table commands
 	_, err = db.Exec(`
 	CREATE TABLE IF NOT EXISTS commands (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -82,7 +77,6 @@ func Setup() {
 	fmt.Println("[*] Database initialized successfully!")
 }
 
-// Tambahkan user dengan password yang di-hash
 func AddUser(username, password string) error {
 	db := Connect()
 	defer db.Close()
@@ -102,19 +96,16 @@ func AddUser(username, password string) error {
 	return nil
 }
 
-// GetUserByUsername mencari user berdasarkan username
 func GetUserByUsername(username string) (*User, error) {
 	db := Connect()
 	defer db.Close()
 
 	var user User
-	// Query untuk mencari user berdasarkan username
 	err := db.QueryRow(`SELECT id, username, password, token FROM users WHERE username = ?`, username).
 		Scan(&user.ID, &user.Username, &user.Password, &user.Token)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
-			// Jika tidak ada user ditemukan
 			return nil, nil
 		}
 		log.Println("Error querying user by username:", err)
@@ -124,12 +115,10 @@ func GetUserByUsername(username string) (*User, error) {
 	return &user, nil
 }
 
-// AddAgent menambahkan agent baru ke dalam database
 func AddAgent(agent *Agent) error {
 	db := Connect()
 	defer db.Close()
 
-	// Insert agent baru ke dalam tabel agents
 	_, err := db.Exec(`INSERT INTO agents (id, ip, hostname, os, arch, token, last_seen, registered_at) 
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
 		agent.ID, agent.IP, agent.Hostname, agent.OS, agent.Arch, agent.Token, agent.LastSeen, agent.RegisteredAt)
@@ -143,7 +132,6 @@ func AddAgent(agent *Agent) error {
 	return nil
 }
 
-// GetAllAgents mengambil semua agent dari database
 func GetAllAgents() ([]Agent, error) {
 	db := Connect()
 	defer db.Close()
@@ -160,7 +148,6 @@ func GetAllAgents() ([]Agent, error) {
 		var agent Agent
 		var tags, notes sql.NullString
 
-		// Scan data dari query ke agent dan tags/notes
 		err := rows.Scan(
 			&agent.ID,
 			&agent.IP,
@@ -178,23 +165,20 @@ func GetAllAgents() ([]Agent, error) {
 			continue
 		}
 
-		// Jika tags valid, lakukan pemisahan string berdasarkan koma
 		if tags.Valid {
-			// Mengonversi string tags menjadi slice string, jika formatnya adalah JSON array
 			err = json.Unmarshal([]byte(tags.String), &agent.Tags)
 			if err != nil {
 				log.Println("Gagal mengkonversi tags:", err)
-				agent.Tags = []string{} // Kosongkan jika ada error
+				agent.Tags = []string{}
 			}
 		} else {
-			agent.Tags = []string{} // Kosongkan jika tags tidak valid
+			agent.Tags = []string{}
 		}
 
-		// Menyimpan notes sebagai string kosong jika tidak valid
 		if notes.Valid {
 			agent.Notes = notes.String
 		} else {
-			agent.Notes = "" // Jika notes tidak valid, gunakan string kosong
+			agent.Notes = ""
 		}
 
 		agents = append(agents, agent)
@@ -203,12 +187,10 @@ func GetAllAgents() ([]Agent, error) {
 	return agents, nil
 }
 
-// DeleteAgent menghapus agent berdasarkan ID dari database
 func DeleteAgent(agentID string) error {
 	db := Connect()
 	defer db.Close()
 
-	// Menjalankan query untuk menghapus agent berdasarkan ID
 	_, err := db.Exec(`DELETE FROM agents WHERE id = ?`, agentID)
 	if err != nil {
 		log.Println("Gagal menghapus agent:", err)
@@ -223,7 +205,6 @@ func UpdateTagsAndNotes(agentID string, tags []string, notes string) error {
 	db := Connect()
 	defer db.Close()
 
-	// Marshal tags ke string JSON
 	tagsJSON, err := json.Marshal(tags)
 	if err != nil {
 		log.Println("Gagal encode tags:", err)

@@ -1,0 +1,529 @@
+basePath: /
+definitions:
+  admin.CommandRequest:
+    properties:
+      command:
+        type: string
+    type: object
+  admin.LoginRequest:
+    description: The LoginRequest contains the credentials needed for admin login.
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    type: object
+  admin.RegisterRequest:
+    description: The RegisterRequest contains the credentials needed to register a
+      new admin.
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    type: object
+  admin.UpdateTagsAndNotesRequest:
+    properties:
+      notes:
+        type: string
+      tags:
+        items:
+          type: string
+        type: array
+    type: object
+  agent.CommandResultRequest:
+    properties:
+      agent_id:
+        description: ID of the agent submitting the result
+        type: string
+      command:
+        description: The command that was executed
+        type: string
+      result:
+        description: The result of the command execution
+        type: string
+    type: object
+  agent.HeartbeatRequest:
+    properties:
+      ip_address:
+        description: IP address of the agent
+        type: string
+      last_seen:
+        description: Timestamp of when the agent was last active
+        type: string
+    type: object
+  agent.RegisterRequest:
+    properties:
+      arch:
+        description: Architecture (e.g., x86, ARM) of the agent
+        type: string
+      hostname:
+        description: Hostname of the agent
+        type: string
+      os:
+        description: Operating system of the agent
+        type: string
+    type: object
+  agent.RegisterResponse:
+    properties:
+      message:
+        description: A message indicating the result of the registration
+        type: string
+      token:
+        description: Token generated for the agent after successful registration
+        type: string
+    type: object
+  database.Agent:
+    properties:
+      arch:
+        type: string
+      hostname:
+        type: string
+      id:
+        type: string
+      ip:
+        type: string
+      last_seen:
+        type: string
+      notes:
+        type: string
+      os:
+        type: string
+      registered_at:
+        type: string
+      tags:
+        items:
+          type: string
+        type: array
+      token:
+        type: string
+    type: object
+  database.ErrorResponse:
+    properties:
+      code:
+        type: integer
+      message:
+        type: string
+    type: object
+host: localhost:8443
+info:
+  contact:
+    email: admin@example.com
+    name: C2 Administrator
+  description: API documentation for the C2 (Command and Control) server.
+  license:
+    name: MIT License
+    url: https://opensource.org/licenses/MIT
+  title: C2 Server API
+  version: "1.0"
+paths:
+  /admin/agents:
+    get:
+      description: Returns a list of all agents currently registered in the system
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/database.Agent'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/database.ErrorResponse'
+      summary: Retrieve all registered agents
+      tags:
+      - admin
+  /admin/agents/{agent_id}/update-meta:
+    put:
+      description: Updates the tags and notes of an agent based on the provided agent
+        ID.
+      parameters:
+      - description: Agent ID
+        in: path
+        name: agent_id
+        required: true
+        type: string
+      - description: Agent tags and notes
+        in: body
+        name: update_request
+        required: true
+        schema:
+          $ref: '#/definitions/admin.UpdateTagsAndNotesRequest'
+      responses:
+        "200":
+          description: Agent tags and notes updated successfully
+          schema:
+            type: string
+        "400":
+          description: Invalid request body
+          schema:
+            type: string
+        "500":
+          description: Failed to update agent information
+          schema:
+            type: string
+      summary: Update agent tags and notes
+      tags:
+      - Admin - Agent Management
+  /admin/agents/{id}:
+    delete:
+      description: Permanently removes an agent from the system by its unique ID.
+      parameters:
+      - description: Agent ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: Agent deleted successfully
+          schema:
+            type: string
+        "500":
+          description: Failed to delete agent
+          schema:
+            type: string
+      summary: Delete an agent
+      tags:
+      - Admin - Agents
+  /admin/command/{agent_id}:
+    get:
+      description: Retrieve command history for a given agent ID
+      parameters:
+      - description: Agent ID
+        in: path
+        name: agent_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "500":
+          description: Failed to get commands
+          schema:
+            type: string
+      summary: Get all commands for an agent
+      tags:
+      - admin
+  /admin/command/{agent_id}/send:
+    post:
+      consumes:
+      - application/json
+      description: Queue a command to be executed by the specified agent
+      parameters:
+      - description: Agent ID
+        in: path
+        name: agent_id
+        required: true
+        type: string
+      - description: Command payload
+        in: body
+        name: command
+        required: true
+        schema:
+          $ref: '#/definitions/admin.CommandRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid input
+          schema:
+            type: string
+        "500":
+          description: Failed to send command
+          schema:
+            type: string
+      summary: Send a command to an agent
+      tags:
+      - admin
+  /admin/command/{id}:
+    delete:
+      description: Remove a command entry if it is completed and has result
+      parameters:
+      - description: Command ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: Command deleted successfully
+          schema:
+            type: string
+        "400":
+          description: Command cannot be deleted
+          schema:
+            type: string
+        "404":
+          description: Command not found
+          schema:
+            type: string
+        "500":
+          description: Failed to delete command
+          schema:
+            type: string
+      summary: Delete a completed command with result
+      tags:
+      - admin
+  /admin/commands/{command_id}/download:
+    get:
+      description: Decrypts the encrypted command result file and sends it to the
+        admin as a downloadable file.
+      parameters:
+      - description: Command ID
+        in: path
+        name: command_id
+        required: true
+        type: string
+      - description: Nonce for decryption
+        in: query
+        name: nonce
+        required: true
+        type: string
+      responses:
+        "200":
+          description: Decrypted command result file
+          schema:
+            type: file
+        "400":
+          description: Invalid nonce
+          schema:
+            type: string
+        "404":
+          description: No result found
+          schema:
+            type: string
+        "500":
+          description: Failed to decrypt file
+          schema:
+            type: string
+      summary: Download command result file
+      tags:
+      - Admin - Commands
+  /admin/login:
+    post:
+      description: Authenticates an admin based on the provided username and password
+        and returns a JWT token.
+      parameters:
+      - description: Login credentials
+        in: body
+        name: login_request
+        required: true
+        schema:
+          $ref: '#/definitions/admin.LoginRequest'
+      responses:
+        "200":
+          description: JWT token
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid input
+          schema:
+            type: string
+        "401":
+          description: Invalid credentials
+          schema:
+            type: string
+        "500":
+          description: Database error or token generation error
+          schema:
+            type: string
+      summary: Admin login
+      tags:
+      - Admin - Authentication
+  /admin/register:
+    post:
+      description: Registers a new admin with the provided username and password.
+      parameters:
+      - description: New admin credentials
+        in: body
+        name: register_request
+        required: true
+        schema:
+          $ref: '#/definitions/admin.RegisterRequest'
+      responses:
+        "201":
+          description: Admin registration success message
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid input
+          schema:
+            type: string
+        "500":
+          description: Error registering admin
+          schema:
+            type: string
+      summary: Register new admin
+      tags:
+      - Admin - Authentication
+  /agent/heartbeat:
+    post:
+      consumes:
+      - application/json
+      description: Receives a heartbeat signal from the agent, updates the agent status,
+        and checks for pending commands.
+      parameters:
+      - description: Authorization token for the agent
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Heartbeat request body
+        in: body
+        name: heartbeat
+        required: true
+        schema:
+          $ref: '#/definitions/agent.HeartbeatRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Heartbeat response with agent status and pending command
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: 'Bad Request: Invalid input'
+          schema:
+            type: string
+        "401":
+          description: 'Unauthorized: Missing or invalid token'
+          schema:
+            type: string
+        "404":
+          description: Agent not found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Heartbeat from agent
+  /agent/register:
+    post:
+      consumes:
+      - application/json
+      description: Registers a new agent with the provided hostname, OS, and architecture,
+        and generates a token for the agent.
+      parameters:
+      - description: Agent registration details
+        in: body
+        name: agent
+        required: true
+        schema:
+          $ref: '#/definitions/agent.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Successfully registered agent with a generated token
+          schema:
+            $ref: '#/definitions/agent.RegisterResponse'
+        "400":
+          description: Invalid input data
+          schema:
+            type: string
+        "409":
+          description: Agent already registered
+          schema:
+            type: string
+        "500":
+          description: Internal server error during registration
+          schema:
+            type: string
+      summary: Register a new agent
+  /agent/result:
+    post:
+      consumes:
+      - application/json
+      description: This endpoint receives the result of a command executed by the
+        agent, updates the corresponding command status, and stores the result in
+        the database.
+      parameters:
+      - description: Command result details
+        in: body
+        name: result
+        required: true
+        schema:
+          $ref: '#/definitions/agent.CommandResultRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully submitted the result
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid input data
+          schema:
+            type: string
+        "404":
+          description: Command not found or already processed
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Submit the result of a command executed by an agent
+  /agent/upload:
+    post:
+      consumes:
+      - multipart/form-data
+      description: This endpoint allows an agent to upload a file as the result of
+        a command. The file is then encrypted before being stored on the server.
+      parameters:
+      - description: Command ID
+        in: formData
+        name: command_id
+        required: true
+        type: string
+      - description: File result
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: File successfully uploaded and encrypted
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid input or bad request
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Upload and encrypt file result of a command
+swagger: "2.0"

@@ -26,3 +26,13 @@ go.work.sum
 
 # Rest client test
 test-api.rest
+
+# Database
+*.db
+
+# ssl
+*.key
+*.pem
+
+# log
+*.log

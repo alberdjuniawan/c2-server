@@ -2,39 +2,44 @@ package utils
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"time"
 )
 
-// LogInfo mencatat log dengan level info
 func LogInfo(message string) {
 	log.Printf("[INFO] [%s] %s", time.Now().Format(time.RFC3339), message)
 }
 
-// LogWarning mencatat log dengan level warning
 func LogWarning(message string) {
 	log.Printf("[WARNING] [%s] %s", time.Now().Format(time.RFC3339), message)
 }
 
-// LogError mencatat log dengan level error
 func LogError(message string) {
 	log.Printf("[ERROR] [%s] %s", time.Now().Format(time.RFC3339), message)
 }
 
-// SetupLogger setup untuk log file jika diperlukan
+func LogErrorWithErr(context string, err error) {
+	if err != nil {
+		log.Printf("[ERROR] [%s] %s: %v", time.Now().Format(time.RFC3339), context, err)
+	}
+}
+
 func SetupLogger() (*os.File, error) {
-	// Create or open log file
-	logFile, err := os.OpenFile("app.log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
+	logPath := os.Getenv("APP_LOG_PATH")
+	if logPath == "" {
+		logPath = "app.log"
+	}
+
+	logFile, err := os.OpenFile(logPath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
 	if err != nil {
 		return nil, fmt.Errorf("unable to open log file: %v", err)
 	}
 
-	// Redirect log output ke file dan juga ke konsol
-	log.SetOutput(logFile)
+	multiWriter := io.MultiWriter(os.Stdout, logFile)
+	log.SetOutput(multiWriter)
 
-	// Set format log untuk waktu yang lebih mudah dibaca
 	log.SetFlags(log.LstdFlags)
-
 	return logFile, nil
 }
