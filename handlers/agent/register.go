@@ -10,20 +10,28 @@ import (
 	"github.com/google/uuid"
 )
 
-// RegisterRequest untuk pendaftaran agent baru (tanpa ID dan IP)
 type RegisterRequest struct {
 	Hostname string `json:"hostname"`
 	OS       string `json:"os"`
 	Arch     string `json:"arch"`
 }
 
-// RegisterResponse untuk response setelah registrasi agent
 type RegisterResponse struct {
 	Message string `json:"message"`
 	Token   string `json:"token,omitempty"`
 }
 
-// RegisterAgent untuk mendaftarkan agent baru
+// RegisterAgent handles the registration of a new agent.
+// @Summary Register a new agent
+// @Description Registers a new agent with the provided hostname, OS, and architecture, and generates a token for the agent.
+// @Accept json
+// @Produce json
+// @Param agent body RegisterRequest true "Agent registration details"
+// @Success 201 {object} RegisterResponse "Successfully registered agent with a generated token"
+// @Failure 400 {string} string "Invalid input data"
+// @Failure 409 {string} string "Agent already registered"
+// @Failure 500 {string} string "Internal server error during registration"
+// @Router /agent/register [post]
 func RegisterAgent(w http.ResponseWriter, r *http.Request) {
 	var req RegisterRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
@@ -33,13 +41,10 @@ func RegisterAgent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Generate UUID untuk ID agent
 	newID := uuid.New().String()
 
-	// Ambil IP dari request (gunakan r.RemoteAddr atau X-Forwarded-For jika menggunakan proxy)
-	ip := r.RemoteAddr // Ambil IP asli dari request
+	ip := r.RemoteAddr
 
-	// Validasi apakah agent dengan ID yang sama sudah terdaftar
 	db := database.Connect()
 	defer db.Close()
 
@@ -57,7 +62,6 @@ func RegisterAgent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Panggil service untuk melakukan registrasi agent
 	token, err := services.RegisterAgent(newID, ip, req.Hostname, req.OS, req.Arch)
 	if err != nil {
 		utils.LogError("Error registering agent: " + err.Error())
@@ -70,6 +74,6 @@ func RegisterAgent(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(RegisterResponse{
 		Message: "Agent registered successfully",
-		Token:   token, // Kirim token yang dihasilkan
+		Token:   token,
 	})
 }

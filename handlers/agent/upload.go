@@ -13,9 +13,23 @@ import (
 	"time"
 )
 
+const MaxUploadSize = 10 << 20
+
+var AllowedExtensions = []string{".jpg", ".jpeg", ".png", ".txt", ".pdf", ".zip"}
+
+// UploadResult handles the file upload and encryption for command results.
+// @Summary Upload and encrypt file result of a command
+// @Description This endpoint allows an agent to upload a file as the result of a command. The file is then encrypted before being stored on the server.
+// @Accept multipart/form-data
+// @Produce json
+// @Param command_id formData string true "Command ID"
+// @Param file formData file true "File result"
+// @Success 200 {object} map[string]string "File successfully uploaded and encrypted"
+// @Failure 400 {string} string "Invalid input or bad request"
+// @Failure 500 {string} string "Internal server error"
+// @Router /agent/upload [post]
 func UploadResult(w http.ResponseWriter, r *http.Request) {
-	// Parse multipart
-	err := r.ParseMultipartForm(10 << 20) // max 10MB
+	err := r.ParseMultipartForm(MaxUploadSize)
 	if err != nil {
 		utils.LogError("Failed to parse multipart form: " + err.Error())
 		http.Error(w, "Bad request", http.StatusBadRequest)
@@ -37,14 +51,16 @@ func UploadResult(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 
-	// Buat nama file unik
-	timestamp := time.Now().Unix()
-	randomSuffix := make([]byte, 4)
-	rand.Read(randomSuffix)
-	filename := fmt.Sprintf("%s_%d_%s%s", commandID, timestamp, hex.EncodeToString(randomSuffix), filepath.Ext(handler.Filename))
+	if !isValidExtension(handler.Filename) {
+		utils.LogError("Invalid file type")
+		http.Error(w, "Invalid file type", http.StatusBadRequest)
+		return
+	}
+
+	filename := sanitizeFilename(fmt.Sprintf("%s_%d_%s%s", commandID, time.Now().Unix(), hex.EncodeToString(generateRandomSuffix(4)), filepath.Ext(handler.Filename)))
+
 	savePath := filepath.Join("uploads", filename)
 
-	// Simpan file sementara
 	tempFile, err := os.Create(savePath)
 	if err != nil {
 		utils.LogError("Failed to create temp file: " + err.Error())
@@ -60,7 +76,6 @@ func UploadResult(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 🔐 Baca isi file untuk dienkripsi
 	fileBytes, err := os.ReadFile(savePath)
 	if err != nil {
 		utils.LogError("Failed to read file before encryption: " + err.Error())
@@ -68,7 +83,6 @@ func UploadResult(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 🔐 Enkripsi file
 	encryptedData, nonce, err := utils.EncryptFile(fileBytes)
 	if err != nil {
 		utils.LogError("Failed to encrypt file: " + err.Error())
@@ -76,7 +90,6 @@ func UploadResult(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Simpan file terenkripsi
 	encryptedFilename := "enc_" + filename
 	encryptedPath := filepath.Join("uploads", encryptedFilename)
 	err = os.WriteFile(encryptedPath, encryptedData, 0644)
@@ -86,17 +99,14 @@ func UploadResult(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Optional: Simpan nonce sebagai file samping
 	noncePath := encryptedPath + ".nonce"
 	err = os.WriteFile(noncePath, nonce, 0644)
 	if err != nil {
 		utils.LogWarning("Failed to save nonce, decryption may not be possible later")
 	}
 
-	// Hapus file original
 	os.Remove(savePath)
 
-	// Update database
 	db := database.Connect()
 	defer db.Close()
 
@@ -112,4 +122,24 @@ func UploadResult(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(fmt.Sprintf(`{"status":"ok", "command_id": "%s"}`, commandID)))
+}
+
+func isValidExtension(filename string) bool {
+	ext := filepath.Ext(filename)
+	for _, allowedExt := range AllowedExtensions {
+		if ext == allowedExt {
+			return true
+		}
+	}
+	return false
+}
+
+func sanitizeFilename(filename string) string {
+	return filepath.Base(filename)
+}
+
+func generateRandomSuffix(length int) []byte {
+	suffix := make([]byte, length)
+	rand.Read(suffix)
+	return suffix
 }

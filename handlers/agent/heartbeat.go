@@ -8,14 +8,25 @@ import (
 	"time"
 )
 
-// HeartbeatRequest tanpa ID, karena ID diambil dari token
 type HeartbeatRequest struct {
 	LastSeen  time.Time `json:"last_seen"`
 	IPAddress string    `json:"ip_address"`
 }
 
+// Heartbeat handles the agent's heartbeat signal to update the agent status.
+// @Summary Heartbeat from agent
+// @Description Receives a heartbeat signal from the agent, updates the agent status, and checks for pending commands.
+// @Accept json
+// @Produce json
+// @Param Authorization header string true "Authorization token for the agent"
+// @Param heartbeat body HeartbeatRequest true "Heartbeat request body"
+// @Success 200 {object} map[string]interface{} "Heartbeat response with agent status and pending command"
+// @Failure 400 {string} string "Bad Request: Invalid input"
+// @Failure 401 {string} string "Unauthorized: Missing or invalid token"
+// @Failure 404 {string} string "Agent not found"
+// @Failure 500 {string} string "Internal Server Error"
+// @Router /agent/heartbeat [post]
 func Heartbeat(w http.ResponseWriter, r *http.Request) {
-	// Ambil token dari header Authorization
 	tokenString := r.Header.Get("Authorization")
 	if tokenString == "" {
 		utils.LogError("Missing Authorization header in Heartbeat")
@@ -23,7 +34,6 @@ func Heartbeat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Verifikasi token dan ambil ID agent
 	agentID, err := utils.VerifyToken(tokenString)
 	if err != nil {
 		utils.LogError("Invalid token in Heartbeat: " + err.Error())
@@ -31,7 +41,6 @@ func Heartbeat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Decode body
 	var req HeartbeatRequest
 	err = json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
@@ -40,7 +49,6 @@ func Heartbeat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Validasi apakah agent ada
 	db := database.Connect()
 	defer db.Close()
 
@@ -52,7 +60,6 @@ func Heartbeat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Update last_seen dan IP
 	_, err = db.Exec(`UPDATE agents SET last_seen = ?, ip = ? WHERE id = ?`,
 		req.LastSeen, req.IPAddress, agentID)
 	if err != nil {
@@ -61,7 +68,6 @@ func Heartbeat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Cek apakah ada command pending
 	var cmd database.Command
 	row := db.QueryRow(`
 		SELECT id, agent_id, command, status, result, created_at, executed_at
@@ -81,14 +87,13 @@ func Heartbeat(w http.ResponseWriter, r *http.Request) {
 		&cmd.ExecutedAt,
 	)
 
-	// Siapkan response
 	response := map[string]interface{}{
 		"message":   "Heartbeat received successfully",
 		"agent_id":  agentID,
 		"last_seen": req.LastSeen,
 	}
 
-	if err != nil {
+	if err == nil {
 		response["pending_command"] = cmd
 	} else {
 		utils.LogInfo("No pending command for agent: " + agentID)
