@@ -1,4 +1,3 @@
-// deleteAgent.go
 package admin
 
 import (
@@ -9,20 +8,25 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// DeleteAgentHandler menghapus agent berdasarkan ID
+// DeleteAgentHandler deletes a registered agent by ID.
+//
+// @Summary Delete an agent
+// @Description Permanently removes an agent from the system by its unique ID.
+// @Tags Admin - Agents
+// @Param id path string true "Agent ID"
+// @Success 200 {string} string "Agent deleted successfully"
+// @Failure 500 {string} string "Failed to delete agent"
+// @Router /admin/agents/{id} [delete]
 func DeleteAgentHandler(w http.ResponseWriter, r *http.Request) {
-	// Mengambil agent ID dari URL
 	vars := mux.Vars(r)
 	agentID := vars["id"]
 
-	// Panggil fungsi DeleteAgent dari database
 	err := database.DeleteAgent(agentID)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Failed to delete agent: %v", err), http.StatusInternalServerError)
 		return
 	}
 
-	// Kembalikan respon sukses
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("Agent deleted successfully"))
 }

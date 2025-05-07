@@ -8,13 +8,23 @@ import (
 	"net/http"
 )
 
-// LoginRequest untuk login admin
+// LoginRequest represents the body of a login request for the admin.
+// @Description The LoginRequest contains the credentials needed for admin login.
 type LoginRequest struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
 }
 
-// LoginAdmin untuk autentikasi admin
+// LoginAdmin authenticates the admin and generates a JWT token upon successful login.
+// @Summary Admin login
+// @Description Authenticates an admin based on the provided username and password and returns a JWT token.
+// @Tags Admin - Authentication
+// @Param login_request body admin.LoginRequest true "Login credentials"
+// @Success 200 {object} map[string]string "JWT token"
+// @Failure 400 {string} string "Invalid input"
+// @Failure 401 {string} string "Invalid credentials"
+// @Failure 500 {string} string "Database error or token generation error"
+// @Router /admin/login [post]
 func LoginAdmin(w http.ResponseWriter, r *http.Request) {
 	var req LoginRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
@@ -39,13 +49,11 @@ func LoginAdmin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Verifikasi password menggunakan VerifyPassword
 	if !utils.VerifyPassword(hashedPassword, req.Password) {
 		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
 		return
 	}
 
-	// Buat JWT token
 	token, err := utils.GenerateJWT(req.Username)
 	if err != nil {
 		utils.LogError("Error generating token in LoginAdmin")
