@@ -4,7 +4,7 @@ A Command & Control (C2) backend server designed to manage remote agents securel
 
 ## Features
 
-### **Admin Features**
+### **`Admin Features`**
 
 **Admin Authentication & Registration**
   - JWT-based admin authentication for secure access.
@@ -21,7 +21,7 @@ A Command & Control (C2) backend server designed to manage remote agents securel
   - **File download**: Admin can download the result files of executed commands.
   - **Delete command history**: Admin can delete command history records.
 
-### **Agent Features**
+### **`Agent Features`**
 
 **Agent Registration**
   - Secure agent registration via signature verification to avoid impersonation.
@@ -38,7 +38,7 @@ A Command & Control (C2) backend server designed to manage remote agents securel
   - **File size restrictions**: Limits on the size of uploaded files to prevent overflow or excessive load.
   - **Allowed extensions validation**: Ensures that only certain file types are accepted.
 
-**Security Features**
+**`Security Features`**
 
 **Routing & Access Control**
   - **Dual-server routing**: Public server (`:443`) for agents, internal server (`:8443`) for admin access.
@@ -67,65 +67,6 @@ A Command & Control (C2) backend server designed to manage remote agents securel
   - **Schema definitions**: Models defined in `models.go` represent database tables (`agents`, `users`, `commands`, etc.)
   - **User Management**: Admin accounts are stored with hashed passwords using bcrypt for secure login.
   - **Logging & Command History**: Tracks each agent's activity, including sent commands and results, with timestamps and metadata.
-  
-## Project Structure
-
-```bash
-C2-Server/
-├── .github/
-│   └── workflows/
-│       └── go.yml                   # GitHub Actions CI configuration
-├── config/
-│   ├── ssl/
-│   │   ├── internal.key             # Private key for HTTPS server
-│   │   └── internal.pem             # Certificate file for HTTPS server
-│   └── config.go                    # Loads environment variables and config
-├── database/
-│   ├── db.go                        # Database connection and setup
-│   └── models.go                    # DB schema definitions (Agent, User, Command, etc.)
-├── docs/
-│   ├── docs.go                      # Swagger docs init (via swaggo/swag)
-│   ├── swagger.json                 # Generated Swagger spec (JSON)
-│   └── swagger.yaml                 # Swagger spec (YAML version)
-├── handlers/
-│   ├── admin/
-│   │   ├── agents.go                # Handler to list agents
-│   │   ├── command.go               # Handler to send commands to agents
-│   │   ├── delete_agent.go          # Handler to remove agent
-│   │   ├── download.go              # File download endpoint for command results
-│   │   ├── login.go                 # Admin login handler
-│   │   ├── register.go              # Admin registration handler
-│   │   └── update_meta.go           # Update agent's metadata (tags, notes)
-│   ├── agent/
-│   │   ├── heartbeat.go             # Heartbeat handler to mark agent online
-│   │   ├── register.go              # Agent registration handler
-│   │   ├── result.go                # Handler for agent to send back command result
-│   │   └── upload.go                # Handler to upload result from agent
-│   └── middleware/
-│       ├── auth.go                  # JWT validation middleware for admin
-│       ├── cors.go                  # Cross-Origin Resource Sharing config
-│       ├── rate_limiter.go          # Rate limiting middleware
-│       ├── recover.go               # Panic recovery middleware
-│       ├── security.go              # Secure headers middleware
-│       └── verify_signature.go      # Signature validation for agent request integrity
-├── services/
-│   ├── admin_services.go           # Admin-side business logic (user, command management)
-│   └── agent_services.go           # Agent-side business logic (heartbeat, results)
-├── utils/
-│   ├── crypto.go                   # AES-256-GCM encryption for file result
-│   ├── jwt.go                      # JWT generation and parsing helpers
-│   ├── logger.go                   # Logging utility
-│   └── password.go                 # Bcrypt password hashing utilities
-├── .env                            # Env vars: JWT_SECRET, DB path, etc.
-├── .gitignore                      # Git ignored files
-├── app.log                         # Server log file (optional, runtime created)
-├── go.mod                          # Go module definition
-├── go.sum                          # Go module checksum
-├── LICENSE                         # Project license (MIT, assumed)
-├── main.go                         # Entry point: HTTPS server setup & routing
-├── README.md                       # Project documentation (to be generated)
-└── test-api.rest                   # REST client file to test endpoints (e.g., VSCode Thunder Client)
-```
 
 ## Requirements
 
