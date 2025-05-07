@@ -6,16 +6,16 @@ A Command & Control (C2) backend server designed to manage remote agents securel
 
 ### **Admin Features**
 
-- **Admin Authentication & Registration**
+**Admin Authentication & Registration**
   - JWT-based admin authentication for secure access.
   - Admin can register with bcrypt-hashed passwords for safety.
 
-- **Agent Management**
+**Agent Management**
   - **View all agents**: Admin can list all registered agents with details such as IP, hostname, and OS.
   - **Delete agents**: Admin can remove agents from the system.
   - **Update agent metadata**: Admin can add tags and notes for agents to manage them better.
   
-- **Command Management**
+**Command Management**
   - **Send commands to agents**: Admin can issue commands to specific agents, e.g., capture screenshots, record keystrokes.
   - **Command history tracking**: Track and retrieve command results for each agent.
   - **File download**: Admin can download the result files of executed commands.
@@ -23,47 +23,47 @@ A Command & Control (C2) backend server designed to manage remote agents securel
 
 ### **Agent Features**
 
-- **Agent Registration**
+**Agent Registration**
   - Secure agent registration via signature verification to avoid impersonation.
   
-- **Heartbeat Monitoring**
+**Heartbeat Monitoring**
   - Periodic heartbeat messages to indicate the agent is online and active.
   
-- **Command Result Submission**
+**Command Result Submission**
   - Agents can send command execution results back to the server.
   - **File upload and encryption**: Secure command result file upload with AES-GCM encryption.
   
-- **File Upload Handling**
+**File Upload Handling**
   - **Filename sanitization**: Prevent malicious file names by sanitizing uploads.
   - **File size restrictions**: Limits on the size of uploaded files to prevent overflow or excessive load.
   - **Allowed extensions validation**: Ensures that only certain file types are accepted.
 
-### **Security Features**
+**Security Features**
 
-- **Routing & Access Control**
+**Routing & Access Control**
   - **Dual-server routing**: Public server (`:443`) for agents, internal server (`:8443`) for admin access.
   - **Access control by network boundary**: Ensures admin and agent endpoints are properly separated.
   
-- **Signature Verification & HMAC Authentication**
+**Signature Verification & HMAC Authentication**
   - **Agent signature verification**: Ensures requests from agents are legitimate via HMAC-based signature checks.
   
-- **Encryption**
+**Encryption**
   - **AES-GCM encryption**: Secure storage and transmission of sensitive command results.
   - **File upload encryption**: Encrypts uploaded files before storing them.
 
-- **Security Middleware**
+**Security Middleware**
   - **Rate Limiting**: Limits the number of requests to prevent abuse.
   - **Security Headers**: Adds headers to requests to prevent attacks like XSS, CSRF, and clickjacking.
   - **Replay Attack Prevention**: Ensures requests are unique by validating timestamps and using nonces.
   - **Panic Recovery**: Catches unexpected crashes to prevent leaks of sensitive information.
 
-- **Command Integrity & Validation**
+**Command Integrity & Validation**
   - **Command result integrity**: Ensures that the results sent back from agents are unmodified.
   - **Upload validation**: Ensures files uploaded during command results are valid and safe.
 
 ## Database: SQLite
 
-- **SQLite Database**: Uses SQLite as a lightweight, serverless database for storing agent data, user credentials, commands, logs, and more.
+**SQLite Database**: Uses SQLite as a lightweight, serverless database for storing agent data, user credentials, commands, logs, and more.
   - **Schema definitions**: Models defined in `models.go` represent database tables (`agents`, `users`, `commands`, etc.)
   - **User Management**: Admin accounts are stored with hashed passwords using bcrypt for secure login.
   - **Logging & Command History**: Tracks each agent's activity, including sent commands and results, with timestamps and metadata.
@@ -148,7 +148,6 @@ C2-Server/
    ENCRYPTION_KEY=your_encryption_key
    DOMAIN=yourdomain.com
    AGENT_SECRET=your_agent_secret
-
    
 3. **Run the server**
    ```bash
@@ -192,12 +191,12 @@ C2-Server/
    ### `POST /admin/register`
    - **Description**: Register a new admin.
    - **Request Body**: 
-   - JSON object containing admin credentials (e.g., username and password).
+      - JSON object containing admin credentials (e.g., username and password).
 
    ### `POST /admin/login`
    - **Description**: Admin login to receive a JWT token.
    - **Request Body**: 
-   - JSON object containing admin credentials (e.g., username and password).
+     - JSON object containing admin credentials (e.g., username and password).
 
    **Private Endpoints (Admin) - Requires JWT Authentication**
 
