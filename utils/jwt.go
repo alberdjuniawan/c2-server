@@ -10,19 +10,16 @@ import (
 	"github.com/dgrijalva/jwt-go"
 )
 
-// CustomClaims untuk admin
 type CustomClaims struct {
 	Username string `json:"username"`
 	jwt.StandardClaims
 }
 
-// AgentClaims untuk agent
 type AgentClaims struct {
 	ID string `json:"id"`
 	jwt.StandardClaims
 }
 
-// GenerateJWT untuk admin
 func GenerateJWT(username string) (string, error) {
 	claims := CustomClaims{
 		Username: username,
@@ -35,7 +32,6 @@ func GenerateJWT(username string) (string, error) {
 	return token.SignedString([]byte(config.JWTSecret))
 }
 
-// ValidateJWT untuk admin
 func ValidateJWT(tokenString string) (*jwt.Token, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &CustomClaims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -56,7 +52,6 @@ func ValidateJWT(tokenString string) (*jwt.Token, error) {
 	return nil, fmt.Errorf("invalid token claims")
 }
 
-// GenerateAgentToken untuk agent
 func GenerateAgentToken(agentID string) (string, error) {
 	claims := AgentClaims{
 		ID: agentID,
@@ -72,7 +67,6 @@ func GenerateAgentToken(agentID string) (string, error) {
 func VerifyToken(tokenString string) (string, error) {
 	tokenString = strings.TrimPrefix(tokenString, "Bearer ")
 
-	// Coba parse sebagai agent token
 	token, err := jwt.ParseWithClaims(tokenString, &AgentClaims{}, func(token *jwt.Token) (interface{}, error) {
 		return []byte(config.JWTSecret), nil
 	})
@@ -85,7 +79,6 @@ func VerifyToken(tokenString string) (string, error) {
 		}
 	}
 
-	// Kalau gagal, coba parse sebagai admin token
 	token, err = jwt.ParseWithClaims(tokenString, &CustomClaims{}, func(token *jwt.Token) (interface{}, error) {
 		return []byte(config.JWTSecret), nil
 	})

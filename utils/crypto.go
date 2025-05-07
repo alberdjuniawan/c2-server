@@ -67,7 +67,6 @@ func DecryptFile(encrypted, nonce []byte) ([]byte, error) {
 	return plaintext, nil
 }
 
-// Optional: Helper to convert nonce to string for storage
 func EncodeNonce(nonce []byte) string {
 	return hex.EncodeToString(nonce)
 }
