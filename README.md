@@ -70,6 +70,7 @@ A Command & Control (C2) backend server designed to manage remote agents securel
   
 ## Project Structure
 
+```bash
 C2-Server/
 ├── .github/
 │   └── workflows/
@@ -124,6 +125,7 @@ C2-Server/
 ├── main.go                         # Entry point: HTTPS server setup & routing
 ├── README.md                       # Project documentation (to be generated)
 └── test-api.rest                   # REST client file to test endpoints (e.g., VSCode Thunder Client)
+```
 
 ## Requirements
 
@@ -163,7 +165,7 @@ C2-Server/
    - **Agent** endpoints are available on port `:443` (Public HTTPS).
    - **Admin** endpoints are available on port `:8443` (Internal HTTPS).
 
-   ## Public Endpoints (Agent) - Accessible on Port `:443`
+   **Public Endpoints (Agent) - Accessible on Port `:443`**
 
    ### `POST /agent/register`
    - **Description**: Register a new agent.
@@ -183,7 +185,7 @@ C2-Server/
    - **Description**: Upload results from the agent to the server (e.g., files, screenshots).
    - **Authentication**: Requires a JWT token in the request header (via `Authorization` header).
 
-   ## Admin Endpoints - Accessible on Port `:8443`
+   **Admin Endpoints - Accessible on Port `:8443`**
 
    ### Public Endpoints (Admin)
 
@@ -197,7 +199,7 @@ C2-Server/
    - **Request Body**: 
    - JSON object containing admin credentials (e.g., username and password).
 
-   ### Private Endpoints (Admin) - Requires JWT Authentication
+   **Private Endpoints (Admin) - Requires JWT Authentication**
 
    ### `GET /admin/agents`
    - **Description**: Retrieve a list of all active agents.
