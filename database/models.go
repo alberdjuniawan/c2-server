@@ -44,6 +44,11 @@ type Command struct {
 	ExecutedAt *time.Time `json:"executed_at"`
 }
 
+type ErrorResponse struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+}
+
 type StringArray []string
 
 func (a *StringArray) Scan(value interface{}) error {
