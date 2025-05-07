@@ -81,7 +81,12 @@ A Command & Control (C2) backend server designed to manage remote agents securel
     cd c2-server
     ```
 
-2. **Configure environment variables**
+2. **Download dependencies**
+   ```bash
+   go mod tidy
+   ```
+
+3. **Configure environment variables**
    Create a `.env` file in the root directory (example below):
    ```bash
    DB_PATH=path_to_your_sqlite_db
@@ -90,12 +95,12 @@ A Command & Control (C2) backend server designed to manage remote agents securel
    DOMAIN=yourdomain.com
    AGENT_SECRET=your_agent_secret
    
-3. **Run the server**
+4. **Run the server**
    ```bash
    go run main.go
    ```
 
-4. **Access the server**
+5. **Access the server**
    - **Admin Panel** (localhost): `https://localhost:8443`
    - **Agent Endpoint** (with Let's Encrypt SSL): `https://yourdomain.com:443`
    
